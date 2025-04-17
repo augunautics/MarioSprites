@@ -1,4 +1,4 @@
-// src/main.js
+// src/main.js 
 import spriteURL from './assets/characters_big.png';
 import { loadSprites } from './spriteLoader.js';
 
