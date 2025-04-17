@@ -48,7 +48,7 @@ export async function loadSprites(url, frameWidth, frameHeight) {
       // Widen frame 11 (index 11) on left
       if (y === 0 && x === 11) {
         srcX   -= extraLeft;
-        cropW += extraLeft;
+        cropW += extraLeft; 
       }
 
       // **Corrected**: widen frame 16 (index 16) by exactly 10px
