@@ -3,7 +3,7 @@ import spriteURL from './assets/characters_big.png';
 import { loadSprites } from './spriteLoader.js';
 
 (async () => {
-  // Load the sheet to measure its width
+  // 1. Load the sheet just to get its intrinsic dimensions
   const img = await new Promise((resolve, reject) => {
     const i = new Image();
     i.src = spriteURL;
@@ -11,47 +11,39 @@ import { loadSprites } from './spriteLoader.js';
     i.onerror = reject;
   });
 
-  // Compute frame size (float) for 28 cols across total width
-  const cols = 28;
+  // 2. Define source‑frame size (in sheet pixels)
+  const cols   = 28;
   const frameW = img.width / cols;
   const frameH = 355;
-  const scale = 1;
-  const drawW = frameW * scale;
-  const drawH = frameH * scale;
 
-  // Slice the sheet
-  const sprites = await loadSprites(
-    spriteURL,
-    frameW,
-    frameH
-  );
-  const row0 = sprites[0];
+  // 3. Define *destination* draw size (in canvas pixels)
+  const drawW = 16;
+  const drawH = 32;
 
-  // Resize canvas to hold all sprites + room for text
-  const canvas = document.getElementById('gameCanvas');
-  const paddingBottom = 20;
-  canvas.width = drawW * row0.length;
+  // 4. Slice into data‑URLs
+  const sprites = await loadSprites(spriteURL, frameW, frameH);
+  const row0    = sprites[0];
+
+  // 5. Resize the canvas to fit one row of 16×32 sprites
+  const paddingBottom = 16;
+  const canvas        = document.getElementById('gameCanvas');
+  canvas.width  = drawW * row0.length;
   canvas.height = drawH + paddingBottom;
   const ctx = canvas.getContext('2d');
 
-  // Configure text style
-  ctx.font = '16px sans-serif';
-  ctx.fillStyle = 'lime';
+  // 6. Draw each frame at 16×32
+  ctx.font      = '12px sans-serif';
   ctx.textAlign = 'center';
 
-  // Draw sprites and their indices
   row0.forEach((url, i) => {
     const frameImg = new Image();
     frameImg.onload = () => {
       const x = i * drawW;
-      // Draw sprite
+      // drawImage(src, sx, sy, sw, sh, dx, dy, dw, dh)
       ctx.drawImage(frameImg, 0, 0, frameW, frameH, x, 0, drawW, drawH);
-      // Draw index below
-      ctx.fillText(i.toString(), x + drawW / 2, drawH + paddingBottom * 0.7);
-      // Outline the sprite
-      ctx.strokeStyle = 'lime';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, 0, drawW, drawH);
+      // optional: index below
+      ctx.fillStyle = '#fff';
+      ctx.fillText(i, x + drawW/2, drawH + paddingBottom * 0.7);
     };
     frameImg.src = url;
   });
