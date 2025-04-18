@@ -1,73 +1,46 @@
-// src/main.js
-import spriteURL from './assets/characters_big.png';
-import { loadSprites } from './spriteLoader.js';
+// main.js
+
+// Import sprite sheet asset and helper classes
+import SpriteURL from './assets/characters_big.png';
+import { SpriteParser } from './SpriteParser.js';              // Parses and configures sprite rows
+import { CanvasInitializer } from './CanvasInitializer.js';    // Handles canvas sizing and creation
+import { ImageLoader } from './LoadImage.js';                  // Utility for loading images
 
 (async () => {
-  // 1. Load sheet to get its size
-  const img = await new Promise((res, rej) => {
-    const i = new Image();
-    i.src = spriteURL;
-    i.onload = () => res(i);
-    i.onerror = rej;
-  });
+  // Step 1: Load the sprite sheet image into memory
+  const sheetImg = await ImageLoader.load(SpriteURL);
 
-  // 2. Source‑frame dimensions
-  const cols   = 28;
-  const frameW = img.width / cols;
-  const frameH = 355;
+  // Step 2: Create a parser for the loaded image and retrieve rows
+  const parser = new SpriteParser(sheetImg);
+  const row0 = await parser.getRow(0); // Big Mario row
+  const row1 = await parser.getRow(1); // Small Mario row
+  const row2 = await parser.getRow(2); // Big Mario clone
+  const row3 = await parser.getRow(3); // Small Mario clone
 
-  // 3. Desired draw size
-  const baseW = 16, baseH = 32, scale = 2;
-  const drawW = baseW * scale, drawH = baseH * scale;
+  // Step 3: Initialize canvas dimensions based on row content
+  const { canvas, ctx, width: canvasWidth } = CanvasInitializer.initCanvas(row0, row1, row2, row3);
 
-  // 4. Slice into data‑URLs
-  const sprites = await loadSprites(spriteURL, frameW, frameH);
-  const row0    = sprites[0];
+  // Step 4: Render and animate row0
+  row0.setContext(ctx);
+  row0.setStartY(0);
+  row0.draw();
+  row0.animateCenter(canvasWidth);
 
-  // 5. Canvas sizing: one grid row + padding + one animation slot + padding
-  const padding = 20;
-  const canvas  = document.getElementById('gameCanvas');
-  canvas.width  = drawW * row0.length;
-  canvas.height = drawH + padding + drawH + padding;
-  const ctx = canvas.getContext('2d');
+  // Step 5: Render and animate row1 beneath row0
+  row1.setContext(ctx);
+  row1.setStartY(row0.getBottomY() + row0.getDrawHeight() + row0.padding);
+  row1.draw();
+  row1.animateCenter(canvasWidth);
 
-  ctx.font      = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff';
-  ctx.strokeStyle = 'lime';
-  ctx.lineWidth = 2;
+  // Step 6: Render and animate row2 beneath row1
+  row2.setContext(ctx);
+  row2.setStartY(row1.getBottomY() + row1.getDrawHeight() + row1.padding);
+  row2.draw();
+  row2.animateCenter(canvasWidth);
 
-  // 6. Draw static grid at top
-  row0.forEach((url, i) => {
-    const x = i * drawW;
-    const img1 = new Image();
-    img1.onload = () => {
-      ctx.drawImage(img1, 0, 0, frameW, frameH, x, 0, drawW, drawH);
-      ctx.fillText(i, x + drawW/2, drawH + padding * 0.7);
-      ctx.strokeRect(x, 0, drawW, drawH);
-    };
-    img1.src = url;
-  });
-
-  // 7. Animate one sprite below
-  const animY = drawH + padding;
-  const animX = (canvas.width / 2) - drawW/2;
-  let idx = 0;
-
-  setInterval(() => {
-    // clear previous
-    ctx.clearRect(0, animY, canvas.width, drawH + padding);
-
-    // draw new
-    const img2 = new Image();
-    img2.onload = () => {
-      ctx.drawImage(img2, 0, 0, frameW, frameH, animX, animY, drawW, drawH);
-      ctx.fillText(idx, animX + drawW/2, animY + drawH + padding * 0.7);
-      ctx.strokeRect(animX, animY, drawW, drawH);
-    };
-    img2.src = row0[idx];
-
-    // advance
-    idx = (idx + 1) % row0.length;
-  }, 500);
+  // Step 7: Render and animate row3 beneath row2
+  row3.setContext(ctx);
+  row3.setStartY(row2.getBottomY() + row2.getDrawHeight() + row2.padding);
+  row3.draw();
+  row3.animateCenter(canvasWidth);
 })();
