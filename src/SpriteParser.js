@@ -48,6 +48,14 @@ export class SpriteParser {
         spritesPerRow: 32,
         cropX: 12,
         sourceW: 163
+      },
+      {
+        sheetImg: this.sheetImg,
+        centerFrames: 14,
+        rowStartY: 1250,
+        spriteHeight: 360,
+        spritesPerRow: 28,
+        cropX: 6
       }
     ];
     return rows[index];
