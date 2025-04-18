@@ -39,7 +39,7 @@ export class SmallMario {
         };
         frameImg.src = this.row.getSprites()[index];
         this.step++;
-      }, 700);
+      }, 300);
     }
   
     stop() {
