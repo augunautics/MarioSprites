@@ -1,11 +1,10 @@
 // RowBase.js
-
 export class RowBase {
   constructor(sheetImg) {
     this.ctx = null;
     this.sheetImg = sheetImg;
     this.sprites = [];
-    this.padding = 20;
+    this.padding = 0; // removed vertical spacing between rows
     this.startY = 0;
   }
 
@@ -36,8 +35,12 @@ export class RowBase {
   draw() {
     if (!this.ctx) return;
 
+    const drawW = this.getDrawWidth();
+    // leave 10px to the left for the animated frame, plus a 10px gap
+    const offsetX = drawW + 10;
+
     this.sprites.forEach((url, i) => {
-      const x = i * this.getDrawWidth();
+      const x = offsetX + i * drawW;
       const img = new Image();
       img.onload = () => {
         this.ctx.drawImage(
@@ -45,27 +48,34 @@ export class RowBase {
           0, 0,
           this.sourceW, this.sourceH,
           x, this.startY,
-          this.getDrawWidth(), this.getDrawHeight()
+          drawW, this.getDrawHeight()
         );
-        this.ctx.fillText(i, x + this.getDrawWidth() / 2, this.startY + this.getDrawHeight() + this.padding * 0.7);
-        this.ctx.strokeRect(x, this.startY, this.getDrawWidth(), this.getDrawHeight());
+        this.ctx.fillText(
+          i,
+          x + drawW / 2,
+          this.startY + this.getDrawHeight() + this.padding * 0.7
+        );
+        this.ctx.strokeRect(
+          x, this.startY,
+          drawW, this.getDrawHeight()
+        );
       };
       img.src = url;
     });
   }
 
-  animateCenter(canvasWidth, overrideDrawH = null) {
+  animateCenter(/* canvasWidth is unused for positioning */) {
     if (!this.ctx || !this.sprites) return;
 
-    const drawH = overrideDrawH ?? this.getDrawHeight();
     const drawW = this.getDrawWidth();
-    const animX = (canvasWidth / 2) - drawW / 2;
-    const animY = this.getBottomY();
+    const drawH = this.getDrawHeight();
+    const animX = 10;           // fixed 10px from the left edge
+    const animY = this.startY;  // same line as static sprites
 
     let idx = 0;
-
     setInterval(() => {
-      this.ctx.clearRect(0, animY, canvasWidth, drawH + this.padding);
+      // clear only the animation slot
+      this.ctx.clearRect(animX, animY, drawW, drawH + this.padding);
 
       const img = new Image();
       img.onload = () => {
@@ -74,7 +84,11 @@ export class RowBase {
           animX, animY,
           drawW, drawH
         );
-        this.ctx.fillText(idx, animX + drawW / 2, animY + drawH + this.padding * 0.7);
+        this.ctx.fillText(
+          idx,
+          animX + drawW / 2,
+          animY + drawH + this.padding * 0.7
+        );
       };
       img.src = this.sprites[idx];
       idx = (idx + 1) % this.sprites.length;

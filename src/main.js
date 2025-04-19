@@ -27,13 +27,15 @@ import { SmallMario } from './SmallMario.js';                  // Simulated Mari
   const smallMario = new SmallMario(rows[1], ctx, canvasWidth, 0);
   smallMario.startWalking();
 
-  // Step 5: Draw and animate all rows beneath small Mario
-  let currentY = smallMarioHeight + rows[1].padding;
+  // Step 5: Draw and animate all rows beneath small Mario with 10px vertical spacing
+  const vSpacing = 10;
+  let currentY = smallMarioHeight + vSpacing;
   for (const row of rows) {
     row.setContext(ctx);
     row.setStartY(currentY);
     row.draw();
     row.animateCenter(canvasWidth);
-    currentY = row.getBottomY() + row.getDrawHeight() + row.padding;
+    // advance by row height + spacing
+    currentY += row.getDrawHeight() + vSpacing;
   }
 })();
