@@ -1,58 +1,44 @@
-// src/main.js
-import spriteURL from './assets/characters_big.png';
-import { loadSprites } from './spriteLoader.js';
+// main.js
+
+// Import sprite sheet asset and helper classes
+import SpriteURL from './assets/characters_big.png';
+import { SpriteParser } from './SpriteParser.js';           // Parses and configures sprite rows
+import { CanvasInitializer } from './CanvasInitializer.js'; // Handles canvas sizing and creation
+import { ImageLoader } from './LoadImage.js';               // Utility for loading images
+import { SmallMario } from './SmallMario.js';               // Simulated Mario animation controller
 
 (async () => {
-  // Load the sheet to measure its width
-  const img = await new Promise((resolve, reject) => {
-    const i = new Image();
-    i.src = spriteURL;
-    i.onload = () => resolve(i);
-    i.onerror = reject;
-  });
+  // 1) Load the sheet
+  const sheetImg = await ImageLoader.load(SpriteURL);
 
-  // Compute frame size (float) for 28 cols across total width
-  const cols = 28;
-  const frameW = img.width / cols;
-  const frameH = 355;
-  const scale = 1;
-  const drawW = frameW * scale;
-  const drawH = frameH * scale;
+  // 2) Build parser and pull in all rows dynamically
+  const parser = new SpriteParser(sheetImg);
+  const rows = [];
+  const rowCount = parser.getRowCount();
+  const vSpacing = 10;
 
-  // Slice the sheet
-  const sprites = await loadSprites(
-    spriteURL,
-    frameW,
-    frameH
-  );
-  const row0 = sprites[0];
+  for (let i = 0; i < rowCount; i++) {
+    const row = await parser.getRow(i);
+    // apply the filter in RowBase
+    row.filterSpritesForRow(i);
+    rows.push(row);
+  }
 
-  // Resize canvas to hold all sprites + room for text
-  const canvas = document.getElementById('gameCanvas');
-  const paddingBottom = 20;
-  canvas.width = drawW * row0.length;
-  canvas.height = drawH + paddingBottom;
-  const ctx = canvas.getContext('2d');
+  // 3) Initialize canvas to fit every row
+  const smallMarioHeight = rows[1].getDrawHeight();
+  const { canvas, ctx, width: canvasWidth } = CanvasInitializer.initCanvas(...rows);
 
-  // Configure text style
-  ctx.font = '16px sans-serif';
-  ctx.fillStyle = 'lime';
-  ctx.textAlign = 'center';
+  // 4) SmallMario at top
+  const smallMario = new SmallMario(rows[1], ctx, canvasWidth, 0);
+  smallMario.startWalking();
 
-  // Draw sprites and their indices
-  row0.forEach((url, i) => {
-    const frameImg = new Image();
-    frameImg.onload = () => {
-      const x = i * drawW;
-      // Draw sprite
-      ctx.drawImage(frameImg, 0, 0, frameW, frameH, x, 0, drawW, drawH);
-      // Draw index below
-      ctx.fillText(i.toString(), x + drawW / 2, drawH + paddingBottom * 0.7);
-      // Outline the sprite
-      ctx.strokeStyle = 'lime';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, 0, drawW, drawH);
-    };
-    frameImg.src = url;
-  });
+  // 5) Draw & animate each row with 10px vertical spacing
+  let currentY = smallMarioHeight + vSpacing;
+  for (const row of rows) {
+    row.setContext(ctx);
+    row.setStartY(currentY);
+    row.draw();
+    row.animateCenter(canvasWidth);
+    currentY += row.getDrawHeight() + vSpacing;
+  }
 })();
