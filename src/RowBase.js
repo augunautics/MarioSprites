@@ -1,11 +1,28 @@
 // RowBase.js
+
+// 1×1 transparent pixel for blank slots
+const BLANK_URL =
+  'data:image/png;base64,' +
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQImWNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+
 export class RowBase {
   constructor(sheetImg) {
     this.ctx = null;
     this.sheetImg = sheetImg;
     this.sprites = [];
-    this.padding = 0; // removed vertical spacing between rows
+    this.padding = 0; // vertical spacing is now managed in main.js
     this.startY = 0;
+  }
+
+  /**
+   * For row index 5 (6th row), only keep frames 12–15; blank out all others.
+   */
+  filterSpritesForRow(index) {
+    if (index === 5) {
+      this.sprites = this.sprites.map((url, i) =>
+        (i >= 12 && i <= 15) ? url : BLANK_URL
+      );
+    }
   }
 
   setContext(ctx) {
@@ -64,17 +81,16 @@ export class RowBase {
     });
   }
 
-  animateCenter(/* canvasWidth is unused for positioning */) {
+  animateCenter(/* canvasWidth unused */) {
     if (!this.ctx || !this.sprites) return;
 
     const drawW = this.getDrawWidth();
     const drawH = this.getDrawHeight();
-    const animX = 10;           // fixed 10px from the left edge
-    const animY = this.startY;  // same line as static sprites
+    const animX = 10;             // 10px from left edge
+    const animY = this.startY;    // same line
 
     let idx = 0;
     setInterval(() => {
-      // clear only the animation slot
       this.ctx.clearRect(animX, animY, drawW, drawH + this.padding);
 
       const img = new Image();
